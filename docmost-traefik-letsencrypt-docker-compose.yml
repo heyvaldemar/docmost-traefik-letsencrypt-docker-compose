@@ -67,7 +67,7 @@ services:
       - docmost-network
       - traefik-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/3000' || exit 1
       interval: 10s
       timeout: 5s
       retries: 3
