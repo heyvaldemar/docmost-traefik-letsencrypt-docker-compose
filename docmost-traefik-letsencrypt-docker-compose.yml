@@ -1,3 +1,16 @@
+# Image pins live HERE, as interpolation defaults, so `git pull` (or
+# re-downloading this file) delivers the exact version combination this
+# repository has tested — no .env editing required. Setting the matching
+# variable in .env overrides the default for anyone who wants to pin
+# differently; .env itself carries only secrets and deliberate overrides.
+# CI (Trivy scans, check-pin-freshness, the ephemeral test .env) reads
+# the pins from these lines — this block is the single source of truth.
+x-images:
+  traefik: &traefik-image ${TRAEFIK_IMAGE_TAG:-traefik:3.7@sha256:9c2a54d87f76f5c2f5f2682c68394af92fb12c0a2686798d6462a3f84bd78eaf}
+  postgres: &postgres-image ${DOCMOST_POSTGRES_IMAGE_TAG:-postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94}
+  redis: &redis-image ${DOCMOST_REDIS_IMAGE_TAG:-redis:7.4@sha256:71da9275c5f3fcb97d0fa0c8c5b36cc995327265420f17a04bfd544f458059f7}
+  docmost: &docmost-image ${DOCMOST_IMAGE_TAG:-docmost/docmost:0.95.0@sha256:41c8d777cf23c74e78f94e676aec328b7d7856f48df5e573543dac68d371e37c}
+
 networks:
   docmost-network:
     external: true
@@ -15,17 +28,17 @@ volumes:
 
 services:
   postgres:
-    image: ${DOCMOST_POSTGRES_IMAGE_TAG}
+    image: *postgres-image
     volumes:
       - docmost-postgres:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: ${DOCMOST_DB_NAME}
-      POSTGRES_USER: ${DOCMOST_DB_USER}
-      POSTGRES_PASSWORD: ${DOCMOST_DB_PASSWORD}
+      POSTGRES_DB: ${DOCMOST_DB_NAME:-docmostdb}
+      POSTGRES_USER: ${DOCMOST_DB_USER:-docmostdbuser}
+      POSTGRES_PASSWORD: ${DOCMOST_DB_PASSWORD:?set in .env - see .env.example for generation command}
     networks:
       - docmost-network
     healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-d", "${DOCMOST_DB_NAME}", "-U", "${DOCMOST_DB_USER}" ]
+      test: [ "CMD", "pg_isready", "-q", "-d", "${DOCMOST_DB_NAME:-docmostdb}", "-U", "${DOCMOST_DB_USER:-docmostdbuser}" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -33,7 +46,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: ${DOCMOST_REDIS_IMAGE_TAG}
+    image: *redis-image
     volumes:
       - redis-data:/data
     networks:
@@ -47,22 +60,25 @@ services:
     restart: unless-stopped
 
   docmost:
-    image: ${DOCMOST_IMAGE_TAG}
+    image: *docmost-image
     volumes:
-      - docmost-data:${DATA_PATH}
+      - docmost-data:${DATA_PATH:-/app/data/storage}
     environment:
-      APP_URL: ${DOCMOST_URL}
-      APP_SECRET: ${DOCMOST_SECRET}
-      DATABASE_URL: postgresql://${DOCMOST_DB_USER}:${DOCMOST_DB_PASSWORD}@postgres:5432/${DOCMOST_DB_NAME}?schema=public
+      APP_URL: ${DOCMOST_URL:?set in .env - see .env.example}
+      APP_SECRET: ${DOCMOST_SECRET:?set in .env - see .env.example for generation command}
+      DATABASE_URL: postgresql://${DOCMOST_DB_USER:-docmostdbuser}:${DOCMOST_DB_PASSWORD}@postgres:5432/${DOCMOST_DB_NAME:-docmostdb}?schema=public
       REDIS_URL: redis://redis:6379
-      MAIL_DRIVER: ${DOCMOST_MAIL_DRIVER}
-      SMTP_HOST: ${DOCMOST_SMTP_ADDRESS}
-      SMTP_PORT: ${DOCMOST_SMTP_PORT}
-      SMTP_SECURE: ${DOCMOST_SMTP_SECURE}
-      SMTP_USERNAME: ${DOCMOST_SMTP_USER_NAME}
-      SMTP_PASSWORD: ${DOCMOST_SMTP_PASSWORD}
-      MAIL_FROM_NAME: ${DOCMOST_SMTP_NAME_FROM}
-      MAIL_FROM_ADDRESS: ${DOCMOST_EMAIL_FROM}
+      # Docmost accepts only smtp or postmark here. With the SMTP variables
+      # left empty, the app runs fine and mail sending is simply inert —
+      # set the DOCMOST_SMTP_* variables in .env for real delivery.
+      MAIL_DRIVER: ${DOCMOST_MAIL_DRIVER:-smtp}
+      SMTP_HOST: ${DOCMOST_SMTP_ADDRESS:-}
+      SMTP_PORT: ${DOCMOST_SMTP_PORT:-587}
+      SMTP_SECURE: ${DOCMOST_SMTP_SECURE:-false}
+      SMTP_USERNAME: ${DOCMOST_SMTP_USER_NAME:-}
+      SMTP_PASSWORD: ${DOCMOST_SMTP_PASSWORD:-}
+      MAIL_FROM_NAME: ${DOCMOST_SMTP_NAME_FROM:-Docmost}
+      MAIL_FROM_ADDRESS: ${DOCMOST_EMAIL_FROM:-}
     networks:
       - docmost-network
       - traefik-network
@@ -76,7 +92,7 @@ services:
       # Enable Traefik for this container
       - "traefik.enable=true"
       # Match incoming requests on a specific hostname
-      - "traefik.http.routers.docmost.rule=Host(`${DOCMOST_HOSTNAME}`)"
+      - "traefik.http.routers.docmost.rule=Host(`${DOCMOST_HOSTNAME:?set in .env - see .env.example}`)"
       # Assign the router to a named Traefik service
       - "traefik.http.routers.docmost.service=docmost"
       # Use the 'websecure' (HTTPS) entry point
@@ -105,10 +121,10 @@ services:
         condition: service_healthy
 
   traefik:
-    image: ${TRAEFIK_IMAGE_TAG}
+    image: *traefik-image
     command:
       # Set the log level (DEBUG, INFO, WARN, ERROR)
-      - "--log.level=${TRAEFIK_LOG_LEVEL}"
+      - "--log.level=${TRAEFIK_LOG_LEVEL:-WARN}"
       # Enable the built-in API and web-based dashboard
       - "--api.dashboard=true"
       # Enable the /ping endpoint so we can health-check Traefik
@@ -133,7 +149,7 @@ services:
       # Use ACME (Let's Encrypt) to generate/renew certificates via TLS challenge
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       # The email address used by Let's Encrypt for renewal notices
-      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL:?set in .env - see .env.example}"
       # The file where ACME certificates are stored inside the container
       - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme/acme.json"
       # Enable Prometheus metrics
@@ -162,14 +178,14 @@ services:
       # Enable Traefik for this container
       - "traefik.enable=true"
       # A router to expose the Traefik dashboard
-      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOSTNAME}`)"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOSTNAME:?set in .env - see .env.example}`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.dashboard.service=api@internal"
       # Basic Authentication for the Traefik dashboard
       - "traefik.http.routers.dashboard.middlewares=authtraefik"
-      - "traefik.http.middlewares.authtraefik.basicauth.users=${TRAEFIK_BASIC_AUTH}"
+      - "traefik.http.middlewares.authtraefik.basicauth.users=${TRAEFIK_BASIC_AUTH:?set in .env - see .env.example for htpasswd generation}"
       # Specify the internal server port to the dashboard service
       - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
       # Pass the original Host header to the backend
@@ -177,33 +193,33 @@ services:
     restart: unless-stopped
 
   backups:
-    image: ${DOCMOST_POSTGRES_IMAGE_TAG}
+    image: *postgres-image
     command: >-
-      sh -c 'sleep $BACKUP_INIT_SLEEP &&
+      sh -c 'sleep $$BACKUP_INIT_SLEEP &&
       while true; do
-        pg_dump -h postgres -p 5432 -d $DOCMOST_DB_NAME -U $DOCMOST_DB_USER | gzip > $POSTGRES_BACKUPS_PATH/$POSTGRES_BACKUP_NAME-$(date "+%Y-%m-%d_%H-%M").gz &&
-        tar -zcpf $DATA_BACKUPS_PATH/$DATA_BACKUP_NAME-$(date "+%Y-%m-%d_%H-%M").tar.gz $DATA_PATH &&
-        find $POSTGRES_BACKUPS_PATH -type f -mtime +$POSTGRES_BACKUP_PRUNE_DAYS | xargs rm -f &&
-        find $DATA_BACKUPS_PATH -type f -mtime +$DATA_BACKUP_PRUNE_DAYS | xargs rm -f;
-        sleep $BACKUP_INTERVAL; done'
+        pg_dump -h postgres -p 5432 -d $$DOCMOST_DB_NAME -U $$DOCMOST_DB_USER | gzip > $$POSTGRES_BACKUPS_PATH/$$POSTGRES_BACKUP_NAME-$$(date "+%Y-%m-%d_%H-%M").gz &&
+        tar -zcpf $$DATA_BACKUPS_PATH/$$DATA_BACKUP_NAME-$$(date "+%Y-%m-%d_%H-%M").tar.gz $$DATA_PATH &&
+        find $$POSTGRES_BACKUPS_PATH -type f -mtime +$$POSTGRES_BACKUP_PRUNE_DAYS | xargs rm -f &&
+        find $$DATA_BACKUPS_PATH -type f -mtime +$$DATA_BACKUP_PRUNE_DAYS | xargs rm -f;
+        sleep $$BACKUP_INTERVAL; done'
     volumes:
       - docmost-postgres-backup:/var/lib/postgresql/data
-      - docmost-data:${DATA_PATH}
-      - docmost-data-backups:${DATA_BACKUPS_PATH}
-      - docmost-database-backups:${POSTGRES_BACKUPS_PATH}
+      - docmost-data:${DATA_PATH:-/app/data/storage}
+      - docmost-data-backups:${DATA_BACKUPS_PATH:-/srv/docmost-application-data/backups}
+      - docmost-database-backups:${POSTGRES_BACKUPS_PATH:-/srv/docmost-postgres/backups}
     environment:
-      DOCMOST_DB_NAME: ${DOCMOST_DB_NAME}
-      DOCMOST_DB_USER: ${DOCMOST_DB_USER}
+      DOCMOST_DB_NAME: ${DOCMOST_DB_NAME:-docmostdb}
+      DOCMOST_DB_USER: ${DOCMOST_DB_USER:-docmostdbuser}
       PGPASSWORD: ${DOCMOST_DB_PASSWORD}
-      BACKUP_INIT_SLEEP: ${BACKUP_INIT_SLEEP}
-      BACKUP_INTERVAL: ${BACKUP_INTERVAL}
-      POSTGRES_BACKUP_PRUNE_DAYS: ${POSTGRES_BACKUP_PRUNE_DAYS}
-      DATA_BACKUP_PRUNE_DAYS: ${DATA_BACKUP_PRUNE_DAYS}
-      POSTGRES_BACKUPS_PATH: ${POSTGRES_BACKUPS_PATH}
-      DATA_BACKUPS_PATH: ${DATA_BACKUPS_PATH}
-      DATA_PATH: ${DATA_PATH}
-      POSTGRES_BACKUP_NAME: ${POSTGRES_BACKUP_NAME}
-      DATA_BACKUP_NAME: ${DATA_BACKUP_NAME}
+      BACKUP_INIT_SLEEP: ${BACKUP_INIT_SLEEP:-30m}
+      BACKUP_INTERVAL: ${BACKUP_INTERVAL:-24h}
+      POSTGRES_BACKUP_PRUNE_DAYS: ${POSTGRES_BACKUP_PRUNE_DAYS:-7}
+      DATA_BACKUP_PRUNE_DAYS: ${DATA_BACKUP_PRUNE_DAYS:-7}
+      POSTGRES_BACKUPS_PATH: ${POSTGRES_BACKUPS_PATH:-/srv/docmost-postgres/backups}
+      DATA_BACKUPS_PATH: ${DATA_BACKUPS_PATH:-/srv/docmost-application-data/backups}
+      DATA_PATH: ${DATA_PATH:-/app/data/storage}
+      POSTGRES_BACKUP_NAME: ${POSTGRES_BACKUP_NAME:-docmost-postgres-backup}
+      DATA_BACKUP_NAME: ${DATA_BACKUP_NAME:-docmost-application-data-backup}
     networks:
       - docmost-network
     restart: unless-stopped
