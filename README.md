@@ -5,6 +5,8 @@
 
 This repository deploys **Docmost** — an open-source collaborative wiki and documentation platform (a self-hosted Confluence/Notion alternative) — behind **Traefik** with automatic **Let's Encrypt TLS**, backed by **PostgreSQL 16** and **Redis**, with scheduled **backups** (database + uploaded files) and companion **restore scripts**.
 
+📙 Full narrative installation guide on the blog: [heyvaldemar.com/install-docmost-using-docker-compose/](https://www.heyvaldemar.com/install-docmost-using-docker-compose/).
+
 ## Getting started
 
 ```bash
