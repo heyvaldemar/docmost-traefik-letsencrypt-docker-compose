@@ -3,7 +3,7 @@
 [![Deployment Verification](https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/actions/workflows/deployment-verification.yml/badge.svg?branch=main)](https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/actions/workflows/deployment-verification.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository deploys **Docmost** (an open-source collaborative wiki and documentation platform (a self-hosted Confluence/Notion alternative)) behind **Traefik** with automatic **Let's Encrypt TLS**, backed by **PostgreSQL 16** and **Redis**, with scheduled **backups** (database + uploaded files) and companion **restore scripts**.
+This repository deploys Docmost (an open-source collaborative wiki and documentation platform (a self-hosted Confluence/Notion alternative)) behind Traefik with automatic Let's Encrypt TLS, backed by PostgreSQL 16 and Redis, with scheduled backups (database + uploaded files) and companion restore scripts.
 
 📙 Full narrative installation guide on the blog: [heyvaldemar.com/install-docmost-using-docker-compose/](https://www.heyvaldemar.com/install-docmost-using-docker-compose/).
 
@@ -28,7 +28,7 @@ $EDITOR .env
 docker compose -f docmost-traefik-letsencrypt-docker-compose.yml -p docmost up -d
 ```
 
-Docmost runs its migrations on first start; within a minute `https://${DOCMOST_HOSTNAME}` serves the setup page. **The first account registered becomes the workspace owner**: open it right after deploy.
+Docmost runs its migrations on first start; within a minute `https://${DOCMOST_HOSTNAME}` serves the setup page. The first account registered becomes the workspace owner: open it right after deploy.
 
 ### What success looks like
 
@@ -87,7 +87,7 @@ chmod +x tests/e2e-backup-restore.sh
 
 It stops the database container briefly to prove failure detection. Run it on a staging copy, not on production.
 
-## Security Notes
+## Security notes
 
 - Credentials are read from `.env` at deploy time; `.env` is gitignored and compose fails fast on missing required variables.
 - **Pre-rotation advisory.** Releases before v1.0.0 (2026-09-01) shipped a tracked `.env` with a generated-looking database password, app secret, and SMTP relay credentials. Rotate them all if your deployment reused them (changing `DOCMOST_SECRET` logs everyone out).

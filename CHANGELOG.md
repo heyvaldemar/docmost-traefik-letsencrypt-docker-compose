@@ -72,7 +72,7 @@ _(no unreleased changes yet)_
   required-variable guard fires, a backup is produced, it is a readable
   archive with real dump content (and a readable data `tar.gz` where the
   stack has one), a database outage is reported as `FAILED`, **restore
-  genuinely replaces database state** (a marker row inserted after the
+ replaces database state** (a marker row inserted after the
   baseline backup is gone after restoring it), and pruning removes only
   old files.
 
@@ -103,7 +103,7 @@ v1.2.0.
 
 ### Changed
 
-- **Docmost 0.8.4 → 0.95.0**, **Redis 7.2 → 7.4**, **Traefik 3.2 → 3.7**
+- **Docmost 0.8.4 → 0.95.0**, Redis 7.2 → 7.4, Traefik 3.2 → 3.7
   (3.2's Docker client cannot talk to Docker Engine 29), PostgreSQL 16
   digest-pinned. All pins in the compose `x-images` block.
 - **SMTP is optional**: the SMTP variables default to empty and mail
