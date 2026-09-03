@@ -51,7 +51,7 @@ _(no unreleased changes yet)_
 
 ### Added
 
-- **`tests/e2e-backup-restore.sh`** — seven end-to-end scenarios against
+- **`tests/e2e-backup-restore.sh`**: seven end-to-end scenarios against
   the live stack, run by CI on every push and by you locally: the
   required-variable guard fires, a backup is produced, it is a readable
   archive with real dump content (and a readable data `tar.gz` where the
@@ -97,7 +97,7 @@ v1.2.0.
 
 - **Credentials untracked from git.** The tracked `.env` carried a
   generated-looking database password, the app secret, and SMTP relay
-  credentials — rotate all of them if reused. Note that changing
+  credentials. Rotate all of them if reused. Note that changing
   `DOCMOST_SECRET` invalidates existing sessions.
 
 ### Fixed
