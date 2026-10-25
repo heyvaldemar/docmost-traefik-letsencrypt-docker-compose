@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_(no unreleased changes yet)_
+
+## [1.9.9] - 2026-10-25
+
 ### Changed
 
 - **`docmost/docmost:0.96.0` moved to `docmost/docmost:0.97.0`.** The freshness check reported the lag; the deploy job booted the stack on the new image before this landed.
@@ -304,7 +308,8 @@ v1.2.0.
   job that boots the stack and requires the UI to answer through Traefik
   after the database migrations run.
 
-[Unreleased]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.8...HEAD
+[Unreleased]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.9...HEAD
+[1.9.9]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.8...v1.9.9
 [1.9.8]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.7...v1.9.8
 [1.9.7]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.5...v1.9.6
