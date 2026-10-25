@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_(no unreleased changes yet)_
+### Security
+
+- **`docmost/docmost:0.97.0` was rebuilt upstream**; the pin moved from `sha256:43990f100cda…` to `sha256:40c454d74ffd…`. Same version, same tag, a rebuilt base image — the usual shape of a security fix in a base layer.
 
 ## [1.9.9] - 2026-10-25
 
