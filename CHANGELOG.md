@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_(no unreleased changes yet)_
+
+## [1.9.10] - 2026-10-26
+
 ### Security
 
 - **`docmost/docmost:0.97.0` was rebuilt upstream**; the pin moved from `sha256:43990f100cda…` to `sha256:40c454d74ffd…`. Same version, same tag, a rebuilt base image — the usual shape of a security fix in a base layer.
@@ -310,7 +314,8 @@ v1.2.0.
   job that boots the stack and requires the UI to answer through Traefik
   after the database migrations run.
 
-[Unreleased]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.9...HEAD
+[Unreleased]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.10...HEAD
+[1.9.10]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.9...v1.9.10
 [1.9.9]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.8...v1.9.9
 [1.9.8]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.7...v1.9.8
 [1.9.7]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.6...v1.9.7
