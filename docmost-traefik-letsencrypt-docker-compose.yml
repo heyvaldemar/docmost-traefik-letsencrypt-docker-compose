@@ -157,7 +157,11 @@ services:
       - docmost-network
       - traefik-network
     healthcheck:
-      test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/3000' || exit 1
+      # Since 0.98.0 the image is built on Docker Hardened Images: no shell,
+      # no curl. Node asks Docmost's own health endpoint, which pings
+      # PostgreSQL and Redis, and is healthy only on a 200 that says "ok".
+      # 127.0.0.1, not localhost: Docmost listens on 0.0.0.0 only.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health', { signal: AbortSignal.timeout(4000) }).then((r) => r.json().then((j) => process.exit(r.ok && j.status === 'ok' ? 0 : 1))).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
