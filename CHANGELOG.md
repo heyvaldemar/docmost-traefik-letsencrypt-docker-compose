@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_(no unreleased changes yet)_
+
+## [1.10.0] - 2026-11-23
+
 ### Changed
 
 - **Docmost 0.97.0 → 0.98.0** (`docmost/docmost:0.98.0`). Read by hand: the [v0.98.0 release notes](https://github.com/docmost/docmost/releases/tag/v0.98.0) and the image's [`Dockerfile.hardened`](https://github.com/docmost/docmost/blob/v0.98.0/Dockerfile.hardened). The official image is now built on Docker Hardened Images: no shell, no `pnpm`, no `curl` or `wget`, 126 MB instead of 210 MB. Its command is `node dist/main` from `/app/apps/server`, as user 1000 (the `node` user it replaces was uid 1000 too). Attachments stay in `/app/data/storage`: Docmost resolves the path two levels up from its working directory, which was `/app/apps/server` under `pnpm start` as well. This compose file sets no command and no entrypoint, so nothing else had to change for it. New in the community edition: page covers, user profiles, custom space homepages, space archive, a default workspace language, and comment resolution, which moved from the paid editions.
@@ -406,7 +410,8 @@ v1.2.0.
   job that boots the stack and requires the UI to answer through Traefik
   after the database migrations run.
 
-[Unreleased]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.23...HEAD
+[Unreleased]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.23...v1.10.0
 [1.9.23]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.22...v1.9.23
 [1.9.22]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.21...v1.9.22
 [1.9.21]: https://github.com/heyvaldemar/docmost-traefik-letsencrypt-docker-compose/compare/v1.9.20...v1.9.21
