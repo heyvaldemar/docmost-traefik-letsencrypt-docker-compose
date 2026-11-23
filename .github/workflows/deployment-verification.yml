@@ -241,6 +241,38 @@ jobs:
           done'
           curl -skL "https://$APP_HOSTNAME/" -o /dev/null -w "Docmost UI: %{http_code}\n"
 
+      - name: The health check asks Docmost and reads the answer
+        # Since 0.98.0 the image has no shell, so the old check (bash opening a
+        # TCP connection to port 3000) cannot run there at all. The new one is
+        # node asking /api/health. A stopped process keeps its port (the kernel
+        # accepts into its backlog), so Docmost is stopped with SIGSTOP: the
+        # check must go red while port 3000 still takes a connection, and green
+        # again after SIGCONT. Traefik drops an unhealthy container, so the
+        # step ends by waiting for the route again.
+        run: |
+          cid="$(docker compose -f "$DOCKER_COMPOSE_FILE" -p "$COMPOSE_PROJECT_NAME" ps -q docmost)"
+          ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$cid" | awk '{print $1}')"
+          status() { docker inspect -f '{{.State.Health.Status}}' "$cid"; }
+          wait_for() { for _ in $(seq 1 45); do [ "$(status)" = "$1" ] && return 0; sleep 2; done; return 1; }
+          wait_for healthy || { echo "::error::Docmost is not healthy before the test: $(status)"; exit 1; }
+          echo "healthy, and the endpoint says: $(docker exec "$cid" node -e "fetch('http://127.0.0.1:3000/api/health').then((r) => r.text()).then((t) => console.log(t))")"
+          docker kill --signal=STOP "$cid" >/dev/null
+          if ! wait_for unhealthy; then
+            docker kill --signal=CONT "$cid" >/dev/null
+            echo "::error::with Docmost stopped the health check stayed $(status)"
+            exit 1
+          fi
+          if timeout 5 bash -c ": >/dev/tcp/$ip/3000"; then
+            echo "Docmost stopped: unhealthy, while port 3000 still accepts a connection (a port check would have stayed green)"
+          else
+            echo "::warning::port 3000 refused a connection while Docmost was stopped"
+          fi
+          docker kill --signal=CONT "$cid" >/dev/null
+          wait_for healthy || { echo "::error::after SIGCONT the health check stayed $(status)"; exit 1; }
+          # shellcheck disable=SC2016
+          timeout 2m bash -c 'until curl -skL -o /dev/null -w "%{http_code}" "https://$APP_HOSTNAME/" | grep -qE "^200$"; do sleep 3; done'
+          echo "after SIGCONT: healthy again, and Traefik routes to it"
+
       - name: Verify a backup is produced and valid
         # Log-driven: the file named in a 'backup OK' line is complete by
         # definition, so this never races a dump that is still being written.

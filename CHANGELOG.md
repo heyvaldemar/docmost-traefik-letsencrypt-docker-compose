@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_(no unreleased changes yet)_
+### Changed
+
+- **Docmost 0.97.0 → 0.98.0** (`docmost/docmost:0.98.0`). Read by hand: the [v0.98.0 release notes](https://github.com/docmost/docmost/releases/tag/v0.98.0) and the image's [`Dockerfile.hardened`](https://github.com/docmost/docmost/blob/v0.98.0/Dockerfile.hardened). The official image is now built on Docker Hardened Images: no shell, no `pnpm`, no `curl` or `wget`, 126 MB instead of 210 MB. Its command is `node dist/main` from `/app/apps/server`, as user 1000 (the `node` user it replaces was uid 1000 too). Attachments stay in `/app/data/storage`: Docmost resolves the path two levels up from its working directory, which was `/app/apps/server` under `pnpm start` as well. This compose file sets no command and no entrypoint, so nothing else had to change for it. New in the community edition: page covers, user profiles, custom space homepages, space archive, a default workspace language, and comment resolution, which moved from the paid editions.
+- **The Docmost health check runs Node and reads Docmost's answer.** It was `bash -c ':> /dev/tcp/127.0.0.1/3000'`, which cannot run in an image with no shell: on 0.98.0 the container would never turn healthy, and Traefik routes only to healthy containers. It now asks `/api/health` with Node's `fetch` in exec form, as the release notes advise, and is healthy only on a 200 whose body says `"status":"ok"`; that endpoint pings PostgreSQL and Redis. It asks 127.0.0.1, not localhost, because Docmost listens on 0.0.0.0 only. CI stops Docmost with SIGSTOP and requires the check red while port 3000 still accepts a connection (where the old check stayed green), then green again after SIGCONT.
+
+### Before upgrading
+
+- **`docker exec -it <container> sh` no longer works on Docmost**, and a `command:` override with `pnpm start` would fail: use `node dist/main`. Anything of yours that ran `curl` or a shell inside the Docmost container needs Node instead. The backups and the restore scripts run in their own containers and are not affected.
 
 ## [1.9.23] - 2026-11-20
 
